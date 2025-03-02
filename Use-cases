@@ -1,0 +1,196 @@
+Here are some practical use case examples for the TLS Analyzer tool you’ve built. These scenarios illustrate how the tool can help troubleshoot TLS communication errors related to SSL and certificates, particularly in contexts relevant to your work in VOIP or general network debugging. Each example includes a hypothetical situation, how to use the tool, and the expected output with actionable insights.
+
+Use Case 1: Debugging an Expired Certificate on a VOIP Server
+
+Scenario:
+
+You’re troubleshooting a VOIP application using SIP over TLS. Calls are failing with a "certificate verification failed" error, and you suspect the server’s certificate might be expired.
+
+How to Use the Tool:
+
+Run the tool against the VOIP server’s hostname and port (e.g., SIP typically uses port 5061):
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host voip.example.com --port 5061
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for voip.example.com:5061
+- Protocol: TLSv1.2
+- Cipher Suite: ECDHE-RSA-AES256-GCM-SHA384
+- Certificate Status: Certificate expired on 2023-06-15.
+- Hostname Match: OK
+- Chain Validation: Trusted
+Analysis and Action:
+
+Issue: The certificate expired on June 15, 2023, which is why clients are rejecting the connection.
+Action: Renew the certificate with your Certificate Authority (CA) and update the VOIP server configuration with the new certificate file.
+Use Case 2: Investigating a Hostname Mismatch in a Web Application
+
+Scenario:
+
+A web-based VOIP client fails to connect to its signaling server due to a TLS error. You suspect the certificate’s hostname doesn’t match the server’s domain.
+
+How to Use the Tool:
+
+Analyze the signaling server’s TLS configuration:
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host signaling.example.com --port 443 --verbose
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for signaling.example.com:443
+- Protocol: TLSv1.3
+- Cipher Suite: TLS_AES_256_GCM_SHA384
+- Certificate Status: Valid (expires 2025-01-01)
+- Hostname Match: certificate does not match 'signaling.example.com' (certificate issued for 'www.example.com')
+- Chain Validation: Trusted
+
+Certificate Details:
+  Subject: www.example.com
+  Issuer: SomeCA
+  Serial Number: 987654321
+  SHA256 Fingerprint: e5f6g7h8...
+Analysis and Action:
+
+Issue: The certificate is valid but issued for www.example.com, not signaling.example.com, causing a hostname mismatch.
+Action: Obtain a new certificate that includes signaling.example.com in the Subject Alternative Name (SAN) field or update DNS to align with the certificate’s domain.
+Use Case 3: Checking TLS Version Compatibility
+
+Scenario:
+
+Your VOIP client uses an older library that only supports TLSv1.0, and you’re seeing connection failures to a server that likely requires a newer protocol version.
+
+How to Use the Tool:
+
+Test the server’s TLS configuration:
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host voipserver.example.com --port 443
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for voipserver.example.com:443
+- Protocol: TLSv1.3
+- Cipher Suite: TLS_CHACHA20_POLY1305_SHA256
+- Certificate Status: Valid (expires 2024-09-30)
+- Hostname Match: OK
+- Chain Validation: Trusted
+Analysis and Action:
+
+Issue: The server only supports TLSv1.3, while your client is limited to TLSv1.0, causing a protocol mismatch.
+Action: Update the VOIP client’s TLS library to support TLSv1.2 or TLSv1.3, or configure the server to allow backward compatibility (if feasible and secure).
+Use Case 4: Diagnosing an Untrusted Certificate Chain
+
+Scenario:
+
+A development VOIP server uses a self-signed certificate, and your application rejects the connection due to an untrusted CA.
+
+How to Use the Tool:
+
+Run the analyzer with verbose output to inspect the certificate details:
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host dev.voip.local --port 8443 --verbose
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for dev.voip.local:8443
+- Protocol: TLSv1.2
+- Cipher Suite: ECDHE-RSA-AES128-GCM-SHA256
+- Certificate Status: Valid (expires 2026-03-01)
+- Hostname Match: OK
+- Chain Validation: Untrusted
+
+Certificate Details:
+  Subject: dev.voip.local
+  Issuer: dev.voip.local
+  Serial Number: 456789123
+  SHA256 Fingerprint: i9j0k1l2...
+Analysis and Action:
+
+Issue: The certificate is self-signed (issuer matches subject), and the chain isn’t trusted because it’s not signed by a recognized CA.
+Action: For development, add the self-signed certificate to your client’s trust store. For production, replace it with a certificate from a trusted CA (e.g., Let’s Encrypt).
+Use Case 5: Troubleshooting a Connection Failure
+
+Scenario:
+
+You’re unable to connect to a VOIP server, and you’re unsure if it’s a TLS issue or a network problem (e.g., server down or wrong port).
+
+How to Use the Tool:
+
+Test the connection:
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host voip.example.com --port 5062
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for voip.example.com:5062
+Connection Error: [Errno 111] Connection refused
+Suggestion: Ensure the host and port are correct and the server is reachable.
+Analysis and Action:
+
+Issue: The server isn’t accepting connections on port 5062, possibly due to a misconfigured port or the service being offline.
+Action: Verify the correct port (e.g., SIP TLS typically uses 5061) and check if the server is running and reachable (e.g., using ping or telnet).
+Use Case 6: Verifying a Healthy TLS Configuration
+
+Scenario:
+
+You’ve just deployed a new VOIP server with a fresh certificate and want to confirm everything is working as expected.
+
+How to Use the Tool:
+
+Run a routine check:
+
+bash
+Wrap
+Copy
+python tls_analyzer.py --host secure.voip.com --port 5061
+Sample Output:
+
+text
+Wrap
+Copy
+TLS Analysis for secure.voip.com:5061
+- Protocol: TLSv1.3
+- Cipher Suite: TLS_AES_256_GCM_SHA384
+- Certificate Status: Valid (expires 2025-05-20)
+- Hostname Match: OK
+- Chain Validation: Trusted
+Analysis and Action:
+
+Issue: None—everything looks good!
+Action: Proceed with confidence, knowing the TLS setup is solid. Optionally, schedule periodic checks to monitor certificate expiry.
+How These Use Cases Help You
+
+VOIP Context: Many VOIP systems (e.g., SIP over TLS, SRTP) rely on TLS for security, so these examples directly apply to your work. Issues like expired certificates or protocol mismatches are common culprits in call failures.
+Troubleshooting Workflow: The tool saves time by pinpointing the exact problem—whether it’s a certificate issue, hostname mismatch, or connectivity failure—without needing to dig through verbose logs or run multiple manual commands like openssl s_client.
+Learning Tool: By experimenting with different hosts and ports, you’ll deepen your understanding of TLS mechanics and common pitfalls.
+Tips for Testing
+
+Public Sites: Try well-known domains like google.com (port 443) or sip.linphone.org (port 5061, if available) for positive tests.
+Expired Certs: Test against known expired sites (e.g., expired.badssl.com) to see how the tool handles invalid certificates.
+Local Servers: Set up a local server with a self-signed cert (e.g., using OpenSSL) to simulate untrusted chain scenarios.
+Let me know if you’d like me to expand on any of these use cases, add more VOIP-specific examples, or help you test the tool with a specific server!
